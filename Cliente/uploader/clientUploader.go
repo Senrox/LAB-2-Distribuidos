@@ -1,4 +1,3 @@
-// Package chunks implements a client for Greeter service.
 package main
 
 import (
@@ -6,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -15,17 +15,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-// constantes de puertos y nombres de instancias
-const (
-	address    = "dist29:50051"
-	clientName = "Sender"
-)
-
 func uploadBook(fileName string, c pb.GreeterClient) {
 
 	fileToBeChunked := "./" + fileName
 
 	file, err := os.Open(fileToBeChunked)
+
+	fmt.Println("File opened")
 
 	if err != nil {
 		fmt.Println(err)
@@ -37,12 +33,10 @@ func uploadBook(fileName string, c pb.GreeterClient) {
 	fileInfo, _ := file.Stat()
 
 	var fileSize int64 = fileInfo.Size()
-
-	const fileChunk = 250000 // 1 * (1 << 20) // 1 MB, change this to your requirement
-
+	const fileChunk = 250000
 	totalPartsNum := uint64(math.Ceil(float64(fileSize) / float64(fileChunk)))
 
-	fmt.Printf("Splitting to %d pieces.\n", totalPartsNum)
+	//fmt.Printf("Splitting to %d pieces.\n", totalPartsNum)
 
 	for i := uint64(0); i < totalPartsNum; i++ {
 
@@ -71,16 +65,35 @@ func uploadBook(fileName string, c pb.GreeterClient) {
 	}
 }
 
+const (
+	//addrs  := [3]string{"dist30:50051", "dist31:50052", "dist32:50053"}
+	clientName = "clientUploader"
+)
+
+// Select selecciona aleatoreamente un numero de un array
+func Select() int {
+	in := []int{1, 2, 3}
+	randomIndex := rand.Intn(len(in))
+	pick := in[randomIndex]
+
+	return pick
+}
+
 func main() {
+
+	var book string
+	fmt.Println("Ingresa nombre del libro que quieres subir: ")
+	fmt.Scan(&book)
 
 	// Set up a connection to the server.
 	// Contact the server and print out its response.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial("dist31:50052", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
 	c := pb.NewGreeterClient(conn)
 
-	uploadBook("Don_Quijote_de_la_Mancha-Cervantes_Miguel.pdf", c)
+	uploadBook(book, c)
+
 }
